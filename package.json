@@ -1,0 +1,97 @@
+{
+  "name": "glyphbooth",
+  "productName": "Glyphbooth",
+  "version": "0.1.0",
+  "description": "Turn your camera, screen, video and music into living ASCII, dither, halftone and braille art.",
+  "author": "Mustafa Saraç",
+  "license": "MIT",
+  "homepage": "https://github.com/mrsarac/glyphbooth",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrsarac/glyphbooth.git"
+  },
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "app": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:win": "npm run build && electron-builder --win --publish never",
+    "dist:linux": "npm run build && electron-builder --linux --publish never"
+  },
+  "build": {
+    "appId": "io.github.mrsarac.glyphbooth",
+    "productName": "Glyphbooth",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "identity": null,
+      "hardenedRuntime": false,
+      "extendInfo": {
+        "NSCameraUsageDescription": "Glyphbooth turns your camera into ASCII and dither art. Nothing leaves your computer.",
+        "NSMicrophoneUsageDescription": "Glyphbooth listens to the microphone so the picture can react to sound. Nothing is recorded unless you press record.",
+        "NSScreenCaptureUsageDescription": "Glyphbooth can turn your screen into ASCII and dither art."
+      }
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Graphics"
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "~5.9",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.3.0"
+  }
+}
