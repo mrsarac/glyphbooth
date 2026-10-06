@@ -31,6 +31,9 @@ export function pickVideoType(
   return types.find((type) => isSupported(type)) ?? null;
 }
 
+// Below about a second the encoder may not have written a single chunk yet.
+const MIN_RECORD_MS = 1000;
+
 export class Recorder {
   private recorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
@@ -98,11 +101,20 @@ export class Recorder {
         finish(null);
         return;
       }
-      try {
-        recorder.stop();
-      } catch {
-        finish(null);
-      }
+      const wait = Math.max(0, MIN_RECORD_MS - (performance.now() - this.startedAt));
+      window.setTimeout(() => {
+        if (recorder.state === "inactive") {
+          finish(null);
+          return;
+        }
+        try {
+          // Flush what the encoder holds, so a short take still produces data.
+          recorder.requestData();
+          recorder.stop();
+        } catch {
+          finish(null);
+        }
+      }, wait);
     });
   }
 }

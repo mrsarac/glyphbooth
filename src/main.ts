@@ -405,6 +405,8 @@ async function toggleRecord(): Promise<void> {
         const ext = blob.type.includes("mp4") ? "mp4" : "webm";
         download(blob, `glyphbooth-${timestamp()}.${ext}`);
         toast(t.saved);
+      } else {
+        toast(t.recordTooShort);
       }
     } catch (error) {
       fail(t.recordFailed, error);
