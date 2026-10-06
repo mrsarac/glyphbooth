@@ -24,7 +24,7 @@ Glyphbooth bir WebGL2 uygulamasıdır. Tarayıcıda ve macOS, Windows ve Linux m
 | Windows 10 ve üstü, 64 bit | `Glyphbooth-<sürüm>-win-x64.exe` |
 | Linux, 64 bit | `Glyphbooth-<sürüm>-linux-x86_64.AppImage` |
 
-macOS uygulaması v0.1.1 sürümünden itibaren Apple tarafından imzalı ve onaylıdır (notarized). [macOS'ta ilk açılış](#macosta-ilk-açılış) bölümüne bak.
+macOS uygulaması henüz Apple tarafından onaylanmamıştır (notarized). İmzalı ve onaylı sürümler bir sonraki sürümde gelecek. [macOS'ta ilk açılış](#macosta-ilk-açılış) bölümüne bak.
 
 <p align="center"><img src="docs/media/demo.gif" alt="Glyphbooth beş farklı görünüm arasında geçiş yapıyor" width="800"></p>
 
@@ -62,9 +62,7 @@ Tüm kısayollar harf veya rakamdır. Her klavye düzeninde çalışır.
 
 ## macOS'ta ilk açılış
 
-v0.1.1 sürümünden itibaren `.dmg` dosyası Developer ID ile imzalıdır ve Apple tarafından onaylanmıştır (notarized). Dosyayı aç, **Glyphbooth** uygulamasını **Applications** klasörüne sürükle ve normal şekilde başlat.
-
-**Yalnızca v0.1.0 için:** bu sürüm onaylı değildir. macOS ilk açılışı engeller. İki yoldan birini seç.
+v0.1.0 `.dmg` dosyası ad-hoc imzalıdır ve Apple tarafından onaylanmamıştır (notarized değildir). macOS ilk açılışı engeller. İki yoldan birini seç. İmzalı ve onaylı sürümler bir sonraki sürümde gelecek.
 
 **Yol 1: Sistem Ayarları**
 

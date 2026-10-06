@@ -24,7 +24,7 @@ Glyphbooth is a WebGL2 app that runs in the browser and as a desktop app for mac
 | Windows 10 and newer, 64-bit | `Glyphbooth-<version>-win-x64.exe` |
 | Linux, 64-bit | `Glyphbooth-<version>-linux-x86_64.AppImage` |
 
-From v0.1.1 the macOS app is signed and notarized by Apple. See [First launch on macOS](#first-launch-on-macos).
+The macOS app is not notarized by Apple yet. Signed and notarized builds are coming in the next release. See [First launch on macOS](#first-launch-on-macos).
 
 <p align="center"><img src="docs/media/demo.gif" alt="Glyphbooth cycling through five looks" width="800"></p>
 
@@ -80,9 +80,7 @@ Every shortcut is a letter or a digit, so they work on any keyboard layout.
 
 ## First launch on macOS
 
-From v0.1.1 the `.dmg` is signed with a Developer ID and notarized by Apple. Open it, drag **Glyphbooth** into **Applications** and start it as usual.
-
-**Only for v0.1.0:** that build is not notarized. macOS blocks the first launch. Choose one of the two ways to open it.
+The v0.1.0 `.dmg` is ad-hoc signed and not notarized by Apple. macOS blocks the first launch. Choose one of the two ways to open it. Signed and notarized builds are coming in the next release.
 
 **Way 1: System Settings**
 
