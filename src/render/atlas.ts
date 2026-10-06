@@ -6,6 +6,7 @@ export const GLYPH_W = 48;
 export const GLYPH_H = 80;
 // Glyphs per atlas row. A grid keeps the texture small enough for every GPU (WebGL2 only promises 2048 px).
 export const ATLAS_COLUMNS = 16;
+export const GLYPH_WEIGHT = 800;
 export const FONT =
   '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace';
 
@@ -71,7 +72,8 @@ export function buildAtlas(charset: string): Atlas {
 
   const draw = (ctx: CanvasRenderingContext2D, char: string, x: number, y: number) => {
     ctx.fillStyle = "#fff";
-    ctx.font = `500 ${Math.round(GLYPH_H * 0.7)}px ${FONT}`;
+    // Bold strokes survive the shrink from 48×80 to a 14 px cell; regular weight turns into faint hairlines.
+    ctx.font = `${GLYPH_WEIGHT} ${Math.round(GLYPH_H * 0.7)}px ${FONT}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(char, x + GLYPH_W / 2, y + GLYPH_H / 2 + GLYPH_H * 0.04);

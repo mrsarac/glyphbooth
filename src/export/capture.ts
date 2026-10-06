@@ -138,7 +138,7 @@ export function gridToHtml(
   }
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)}</title>
+<title>${title.replace(/[<>&"]/g, escapeHtml)}</title>
 <style>html,body{margin:0;background:${background}}pre{margin:0;padding:24px;font:10px/1.15 ui-monospace,Menlo,Consolas,monospace;white-space:pre}</style>
 </head><body><pre>${rows.join("\n")}</pre>
 <!-- Made with Glyphbooth: https://github.com/mrsarac/glyphbooth -->

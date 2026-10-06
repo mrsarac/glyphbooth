@@ -14,6 +14,9 @@ uniform float uTime;
 // Tunnel travel, accumulated on the CPU so that speed changes never jump.
 uniform float uPhase;
 uniform float uMirror;
+// The part of the screen not covered by the panel, in uv: center xy, size zw. Scenes are framed in it; media
+// (camera, screen, files) keeps covering the whole screen.
+uniform vec4 uView;
 uniform float uBass;
 uniform float uMid;
 uniform float uTreble;
@@ -29,8 +32,11 @@ vec3 cosPalette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
   return a + b * cos(6.28318 * (c * t + d));
 }
 
+// A point in the visible area: 0 at its center, its shorter side spans -0.5..0.5, with square units. Portrait
+// screens scale by the width, so the orb and the tunnel still fit on a phone.
 vec2 aspectPoint(vec2 uv) {
-  return (uv - 0.5) * vec2(uRes.x / uRes.y, 1.0);
+  float visibleAspect = (uRes.x * uView.z) / (uRes.y * uView.w);
+  return (uv - uView.xy) * vec2(uRes.x / uRes.y, 1.0) / (uView.w * min(visibleAspect, 1.0));
 }
 
 vec3 mediaScene(vec2 uv) {
@@ -77,7 +83,7 @@ vec3 orbScene(vec2 uv) {
     t += d;
     if (t > 7.0) break;
   }
-  float halo = exp(-2.6 * max(length(p) - 0.85, 0.0));
+  float halo = exp(-4.0 * max(length(p) - 0.85, 0.0));
   col += halo * vec3(0.35, 0.45, 0.8) * (0.12 + uBeat * 0.35 * uReact + uLevel * 0.2);
   if (hit) {
     vec3 q = ro + rd * t;
@@ -87,7 +93,9 @@ vec3 orbScene(vec2 uv) {
     float diffuse = max(dot(n, light), 0.0);
     float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
     vec3 tint = mix(vec3(1.0, 0.55, 0.35), vec3(0.35, 0.7, 1.0), n.y * 0.5 + 0.5);
-    col = tint * (0.08 + diffuse * 0.95) + rim * (0.5 + uTreble * uReact) * vec3(0.8, 0.9, 1.0);
+    // A generous fill light: in glyph modes the unlit side would otherwise drop to empty cells and the sphere
+    // would read as a half moon.
+    col = tint * (0.2 + diffuse * 0.85) + rim * (0.5 + uTreble * uReact) * vec3(0.8, 0.9, 1.0);
   }
   return col;
 }
@@ -150,11 +158,11 @@ vec3 spectrumScene(vec2 uv) {
 }
 
 vec3 typeScene(vec2 uv) {
-  vec2 st = uv - 0.5;
+  vec2 st = (uv - uView.xy) / uView.zw;
   st.x += sin(st.y * 9.0 + uTime * 2.0) * 0.018 * (0.25 + uBass * 1.4 * uReact);
   st.y += sin(st.x * 7.0 + uTime * 1.4) * 0.014 * (0.25 + uMid * 1.4 * uReact);
   st /= 1.0 + uBeat * 0.07 * uReact;
-  float screenAspect = uRes.x / uRes.y;
+  float screenAspect = (uRes.x * uView.z) / (uRes.y * uView.w);
   float texAspect = uTexRes.x / max(uTexRes.y, 1.0);
   vec2 box = screenAspect > texAspect ? vec2(0.8 * texAspect / screenAspect, 0.8) : vec2(0.9, 0.9 * screenAspect / texAspect);
   vec2 tuv = st / box + 0.5;

@@ -41,7 +41,7 @@ describe("gridToHtml", () => {
 
   // BUG src/export/capture.ts: escapeHtml compares a whole string with single characters (`char === "<"`), so the
   // `<title>` is never escaped. Harmless with the default title, but wrong for any other. Remove `.fails` after the fix.
-  it.fails("escapes the title", () => {
+  it("escapes the title", () => {
     const html = gridToHtml(grid(["a"]), "#000", "<b>x</b>");
     expect(html).toContain("<title>&lt;b&gt;x&lt;/b&gt;</title>");
   });

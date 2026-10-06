@@ -127,6 +127,12 @@ let contextLost = false;
 let pendingSnapshot = false;
 let presetIndex = -1;
 let panelHidden = false;
+// Scenes are framed in the part of the screen the panel leaves free. `view` glides toward `viewTarget`, so the
+// picture moves along with the panel as it slides in or out.
+type View = [number, number, number, number];
+const FULL_VIEW: View = [0.5, 0.5, 1, 1];
+let viewTarget: View = [...FULL_VIEW];
+const view: View = [...FULL_VIEW];
 
 // --- Messages -----------------------------------------------------------------------------------------------------
 
@@ -266,8 +272,29 @@ function update(patch: Partial<Settings>): void {
   sync();
 }
 
+// Uses the panel's layout box (offset*), which ignores the slide transform, so the target is where the panel ends up.
+function updateView(): void {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const box = panel.root;
+  if (!started || panelHidden || width === 0 || height === 0) {
+    viewTarget = [...FULL_VIEW];
+    return;
+  }
+  const sheet = box.offsetLeft < 1 && box.offsetWidth >= width - 1;
+  if (sheet) {
+    // Bottom sheet: frame the scene in the strip above it. uv y grows upward.
+    const free = clamp(box.offsetTop / height, 0.3, 1);
+    viewTarget = [0.5, 1 - free / 2, 1, free];
+  } else {
+    const free = clamp(box.offsetLeft / width, 0.3, 1);
+    viewTarget = [free / 2, 0.5, free, 1];
+  }
+}
+
 function setPanelHidden(hidden: boolean): void {
   panelHidden = hidden;
+  updateView();
   document.body.classList.toggle("panel-hidden", hidden);
   panel.root.toggleAttribute("inert", hidden);
   if (hidden && panel.root.contains(document.activeElement))
@@ -555,6 +582,7 @@ window.addEventListener("pointerdown", wake, { passive: true });
 // --- Renderer -----------------------------------------------------------------------------------------------------
 
 function resize(): void {
+  updateView();
   if (!renderer) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   renderer.resize(canvas.clientWidth * dpr, canvas.clientHeight * dpr);
@@ -597,6 +625,8 @@ function loop(now: number): void {
   try {
     const audio = engine.update(dt, time);
     phase += dt * (0.6 + audio.level * 2 * settings.reactivity);
+    const glide = 1 - Math.exp(-dt / 0.14);
+    for (let i = 0; i < 4; i++) view[i] += (viewTarget[i] - view[i]) * glide;
     if (settings.text !== textDrawn) {
       drawText(textCanvas, settings.text, FONT);
       textDrawn = settings.text;
@@ -609,6 +639,7 @@ function loop(now: number): void {
       media: media.input,
       mirror: media.mirrored && settings.mirror,
       textCanvas,
+      view,
     });
     frames++;
     if (pendingSnapshot) {
@@ -658,6 +689,7 @@ function start(): void {
   engine.resume().catch((error) => console.warn(error));
   engine.demo.start();
   document.body.classList.add("started");
+  updateView();
   window.setTimeout(() => (splash.hidden = true), 700);
   sync();
   requestAnimationFrame(loop);

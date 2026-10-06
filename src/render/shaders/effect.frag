@@ -51,7 +51,8 @@ vec3 inkColor(float t, vec3 src) {
     float m = max(max(src.r, src.g), src.b);
     return clamp(src / max(m, 0.08), 0.0, 1.0);
   }
-  return rampAt(mix(0.4, 1.0, t));
+  // Glyphs and dots cover only part of their cell, so their ink starts high on the ramp to stay legible.
+  return rampAt(mix(0.5, 1.0, t));
 }
 
 float threshold(vec2 cell) {
@@ -77,13 +78,8 @@ vec3 ascii(vec2 frag) {
     float bl = tone(cellSample(center - dx - dy, uCell.y));
     float bc = tone(cellSample(center - dy, uCell.y));
     float br = tone(cellSample(center + dx - dy, uCell.y));
-    float gx = (tr + 2.0 * mr + br) - (tl + 2.0 * ml + bl);
-    float gy = (tl + 2.0 * tc + tr) - (bl + 2.0 * bc + br);
-    if (length(vec2(gx, gy)) > 0.55) {
-      float angle = atan(gy, gx);
-      int bin = int(mod(floor(angle / 0.7853982 + 0.5), 4.0));
-      glyph = uEdgeBase + bin;
-    }
+    int bin = edgeBin(tl, tc, tr, ml, t, mr, bl, bc, br);
+    if (bin >= 0) glyph = uEdgeBase + bin;
   }
 
   vec2 local = clamp(fract(frag / uCell), 0.02, 0.98);

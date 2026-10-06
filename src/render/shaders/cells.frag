@@ -43,12 +43,8 @@ void main() {
     float bl = tone(cellSample(center - dx - dy, uCell.y));
     float bc = tone(cellSample(center - dy, uCell.y));
     float br = tone(cellSample(center + dx - dy, uCell.y));
-    float gx = (tr + 2.0 * mr + br) - (tl + 2.0 * ml + bl);
-    float gy = (tl + 2.0 * tc + tr) - (bl + 2.0 * bc + br);
-    if (length(vec2(gx, gy)) > 0.55) {
-      float bin = mod(floor(atan(gy, gx) / 0.7853982 + 0.5), 4.0);
-      edge = (bin + 1.0) / 255.0;
-    }
+    int bin = edgeBin(tl, tc, tr, ml, t, mr, bl, bc, br);
+    if (bin >= 0) edge = (float(bin) + 1.0) / 255.0;
   }
   outColor = vec4(t, edge, 0.0, 1.0);
 }

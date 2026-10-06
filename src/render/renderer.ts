@@ -38,6 +38,7 @@ const MODE_INDEX = {
   braille: 3,
   pixel: 4,
 } as const;
+const FULL_VIEW: [number, number, number, number] = [0.5, 0.5, 1, 1];
 // The source pass never needs more pixels than this on its longest side.
 const SOURCE_MAX = 1600;
 
@@ -63,6 +64,9 @@ export interface FrameInput {
   mirror: boolean;
   // The text canvas for the "type" scene.
   textCanvas: HTMLCanvasElement;
+  // The area the scenes are framed in (not covered by the panel), in uv with y up: center x, y and size w, h.
+  // Defaults to the whole screen.
+  view?: [number, number, number, number];
 }
 
 export interface CellGrid {
@@ -267,6 +271,7 @@ export class Renderer {
       .f("uTime", frame.time)
       .f("uPhase", frame.phase)
       .f("uMirror", frame.mirror ? 1 : 0)
+      .f("uView", ...(frame.view ?? FULL_VIEW))
       .f("uBass", audio.bass)
       .f("uMid", audio.mid)
       .f("uTreble", audio.treble)

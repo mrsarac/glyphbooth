@@ -84,6 +84,8 @@ export function bandEnergy(
 ): number {
   const binHz = sampleRate / 2 / bins.length;
   const from = Math.max(0, Math.floor(low / binHz));
+  // A band that starts above Nyquist holds no bins: a clean 0, not an empty loop and -0.
+  if (from > bins.length - 1) return 0;
   const to = Math.min(bins.length - 1, Math.max(from, Math.ceil(high / binHz)));
   let sum = 0;
   for (let i = from; i <= to; i++) sum += bins[i];
