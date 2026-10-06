@@ -62,6 +62,28 @@ export function buildLut(sortedCoverage: number[]): Uint8Array {
   return lut;
 }
 
+// The shade blocks are missing from the bundled font subset and would come from whatever system font exists, so
+// they are drawn here: 8 px squares on a 16 px grid (still visible after the shrink to a cell), covering a quarter,
+// a half, three quarters or all of the cell.
+const SHADES: Record<string, number> = { "░": 1, "▒": 2, "▓": 3, "█": 4 };
+
+function drawShade(ctx: CanvasRenderingContext2D, level: number, x: number, y: number): void {
+  if (level >= 4) {
+    ctx.fillRect(x, y, GLYPH_W, GLYPH_H);
+    return;
+  }
+  for (let py = 0; py < GLYPH_H; py += 8) {
+    for (let px = 0; px < GLYPH_W; px += 8) {
+      const cx = (px / 8) % 2;
+      const cy = (py / 8) % 2;
+      // Quarter: one of four squares. Half: a checker. Three quarters: all but one of four.
+      const on =
+        level === 1 ? cx === 0 && cy === 0 : level === 2 ? cx === cy : !(cx === 1 && cy === 1);
+      if (on) ctx.fillRect(x + px, y + py, 8, 8);
+    }
+  }
+}
+
 export function buildAtlas(charset: string): Atlas {
   const chars = Array.from(charset);
   const measure = document.createElement("canvas");
@@ -72,6 +94,10 @@ export function buildAtlas(charset: string): Atlas {
 
   const draw = (ctx: CanvasRenderingContext2D, char: string, x: number, y: number) => {
     ctx.fillStyle = "#fff";
+    if (char in SHADES) {
+      drawShade(ctx, SHADES[char], x, y);
+      return;
+    }
     // Bold strokes survive the shrink from 48×80 to a 14 px cell; regular weight turns into faint hairlines.
     ctx.font = `${GLYPH_WEIGHT} ${Math.round(GLYPH_H * 0.7)}px ${FONT}`;
     ctx.textAlign = "center";

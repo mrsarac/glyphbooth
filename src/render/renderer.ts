@@ -97,6 +97,8 @@ export class Renderer {
   private width = 0;
   private height = 0;
   private lastFrame: FrameInput | null = null;
+  // Whether the last frame drew media (camera, screen, file) rather than a scene. See invertFor.
+  private mediaActive = false;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const gl = canvas.getContext("webgl2", {
@@ -238,12 +240,14 @@ export class Renderer {
     );
 
     let scene = SCENES.indexOf(settings.scene);
+    this.mediaActive = false;
     let texRes: [number, number] = [1, 1];
     let tex = this.mediaTex;
     if (frame.media) {
       const size = this.upload(this.mediaTex, frame.media);
       if (size) {
         scene = -1;
+        this.mediaActive = true;
         texRes = size;
       }
     }
@@ -290,7 +294,7 @@ export class Renderer {
     palette.colors
       .slice(0, 8)
       .forEach((hex, index) => ramp.set(hexToRgb(hex), index * 3));
-    const invert = settings.invert !== Boolean(palette.light);
+    const invert = this.invertFor(settings);
     const size = cellSize(settings.mode, settings.size) * this.pixelRatio();
     const cell = this.cellFor(settings, size);
 
@@ -336,6 +340,14 @@ export class Renderer {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
+  // Light palettes read as ink on paper. For media that means dark areas get the ink, so the tone is inverted. A
+  // scene is a bright shape on black: inverting it would bury the paper under dense glyphs, so scenes keep their
+  // tone and the bright shape becomes the ink.
+  private invertFor(settings: Settings): boolean {
+    const light = Boolean(paletteById(settings.palette).light);
+    return settings.invert !== (light && this.mediaActive);
+  }
+
   private pixelRatio(): number {
     return this.width / Math.max(1, this.canvas.clientWidth || this.width);
   }
@@ -359,8 +371,7 @@ export class Renderer {
     const cell: [number, number] = [size, size * (GLYPH_H / GLYPH_W)];
     const cols = Math.max(1, Math.floor(this.width / cell[0]));
     const rows = Math.max(1, Math.floor(this.height / cell[1]));
-    const palette = paletteById(settings.palette);
-    const invert = settings.invert !== Boolean(palette.light);
+    const invert = this.invertFor(settings);
 
     const target = createTarget(gl, cols, rows, false);
     const tones = new Uint8Array(cols * rows * 4);
