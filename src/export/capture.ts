@@ -35,6 +35,8 @@ export class Recorder {
   private recorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
   startedAt = 0;
+  // Called when the browser stops a running recording on its own (encoder error, track ended).
+  onError: ((error: unknown) => void) | null = null;
 
   get recording(): boolean {
     return this.recorder !== null;
@@ -49,14 +51,28 @@ export class Recorder {
     const stream = canvas.captureStream(60);
     audio?.getAudioTracks().forEach((track) => stream.addTrack(track));
     this.chunks = [];
-    const recorder = new MediaRecorder(stream, {
-      mimeType: type,
-      videoBitsPerSecond: 12_000_000,
-    });
+    let recorder: MediaRecorder;
+    try {
+      recorder = new MediaRecorder(stream, {
+        mimeType: type,
+        videoBitsPerSecond: 12_000_000,
+      });
+      recorder.start(250);
+    } catch (error) {
+      // Without this the canvas capture track would keep running.
+      stream.getVideoTracks().forEach((track) => track.stop());
+      throw error;
+    }
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) this.chunks.push(event.data);
     };
-    recorder.start(250);
+    recorder.onerror = (event) => {
+      if (this.recorder !== recorder) return;
+      this.recorder = null;
+      this.chunks = [];
+      stream.getVideoTracks().forEach((track) => track.stop());
+      this.onError?.(event);
+    };
     this.recorder = recorder;
     this.startedAt = performance.now();
   }
@@ -66,13 +82,27 @@ export class Recorder {
     if (!recorder) return Promise.resolve(null);
     this.recorder = null;
     return new Promise((resolve) => {
-      recorder.onstop = () => {
+      let done = false;
+      // Resolves exactly once, whether the recorder stops cleanly, errors, or was already dead.
+      const finish = (blob: Blob | null) => {
+        if (done) return;
+        done = true;
         recorder.stream.getVideoTracks().forEach((track) => track.stop());
-        const blob = new Blob(this.chunks, { type: recorder.mimeType });
         this.chunks = [];
-        resolve(blob.size > 0 ? blob : null);
+        resolve(blob && blob.size > 0 ? blob : null);
       };
-      recorder.stop();
+      recorder.onstop = () =>
+        finish(new Blob(this.chunks, { type: recorder.mimeType }));
+      recorder.onerror = () => finish(null);
+      if (recorder.state === "inactive") {
+        finish(null);
+        return;
+      }
+      try {
+        recorder.stop();
+      } catch {
+        finish(null);
+      }
     });
   }
 }

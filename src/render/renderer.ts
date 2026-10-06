@@ -97,6 +97,11 @@ export class Renderer {
   private width = 0;
   private height = 0;
   private lastFrame: FrameInput | null = null;
+  // Images and canvases do not change after they are opened: they are uploaded once, videos every frame.
+  private uploaded: MediaInput | null = null;
+  private uploadedSize: [number, number] = [1, 1];
+  private readonly maxTexture: number;
+  private readonly maxViewport: [number, number];
   // Whether the last frame drew media (camera, screen, file) rather than a scene. See invertFor.
   private mediaActive = false;
 
@@ -130,27 +135,49 @@ export class Renderer {
     this.atlasTex = createTexture(gl, gl.LINEAR_MIPMAP_LINEAR);
     this.lutTex = createTexture(gl, gl.NEAREST);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    this.maxTexture = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
+    const viewport = gl.getParameter(gl.MAX_VIEWPORT_DIMS) as Int32Array;
+    this.maxViewport = [viewport[0], viewport[1]];
   }
 
+  // Atomic: the new targets are made first, so a failure keeps the old size working.
   resize(width: number, height: number): void {
-    width = Math.max(1, Math.floor(width));
-    height = Math.max(1, Math.floor(height));
+    // A minimized window reports 0×0; keep the last good size.
+    if (!(width >= 1 && height >= 1)) return;
+    // Very large or very high-DPI screens can exceed what the GPU can render to; keep the aspect and shrink.
+    const fit = Math.min(
+      1,
+      this.maxTexture / width,
+      this.maxTexture / height,
+      this.maxViewport[0] / width,
+      this.maxViewport[1] / height,
+    );
+    width = Math.max(1, Math.floor(width * fit));
+    height = Math.max(1, Math.floor(height * fit));
     if (width === this.width && height === this.height) return;
-    this.width = width;
-    this.height = height;
-    this.canvas.width = width;
-    this.canvas.height = height;
     const gl = this.gl;
     const scale = Math.min(1, SOURCE_MAX / Math.max(width, height));
-    deleteTarget(gl, this.sourceTarget);
-    deleteTarget(gl, this.effectTarget);
-    this.sourceTarget = createTarget(
+    const source = createTarget(
       gl,
-      Math.round(width * scale),
-      Math.round(height * scale),
+      Math.max(1, Math.round(width * scale)),
+      Math.max(1, Math.round(height * scale)),
       true,
     );
-    this.effectTarget = createTarget(gl, width, height, false);
+    let effect: Target;
+    try {
+      effect = createTarget(gl, width, height, false);
+    } catch (error) {
+      deleteTarget(gl, source);
+      throw error;
+    }
+    deleteTarget(gl, this.sourceTarget);
+    deleteTarget(gl, this.effectTarget);
+    this.sourceTarget = source;
+    this.effectTarget = effect;
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.width = width;
+    this.height = height;
   }
 
   private ensureAtlas(settings: Settings): Atlas {
@@ -218,6 +245,16 @@ export class Renderer {
     return [w, h];
   }
 
+  // Videos change every frame; a still image or canvas only when a different one is opened.
+  private uploadMedia(media: MediaInput): [number, number] | null {
+    if (!(media instanceof HTMLVideoElement) && media === this.uploaded)
+      return this.uploadedSize;
+    const size = this.upload(this.mediaTex, media);
+    this.uploaded = size && !(media instanceof HTMLVideoElement) ? media : null;
+    if (size) this.uploadedSize = size;
+    return size;
+  }
+
   render(frame: FrameInput): void {
     const gl = this.gl;
     const { settings, audio } = frame;
@@ -244,7 +281,7 @@ export class Renderer {
     let texRes: [number, number] = [1, 1];
     let tex = this.mediaTex;
     if (frame.media) {
-      const size = this.upload(this.mediaTex, frame.media);
+      const size = this.uploadMedia(frame.media);
       if (size) {
         scene = -1;
         this.mediaActive = true;
@@ -327,11 +364,14 @@ export class Renderer {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, this.width, this.height);
+    // Under memory pressure the browser may give a smaller drawing buffer than the canvas size asked for.
+    const outW = gl.drawingBufferWidth;
+    const outH = gl.drawingBufferHeight;
+    gl.viewport(0, 0, outW, outH);
     this.post
       .use()
       .texture("uImage", 0, fx.texture)
-      .f("uRes", this.width, this.height)
+      .f("uRes", outW, outH)
       .f("uTime", frame.time)
       .f("uScan", settings.scanlines)
       .f("uGrain", settings.grain)

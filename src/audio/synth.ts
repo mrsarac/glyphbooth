@@ -71,6 +71,14 @@ export class DemoSynth {
   }
 
   private schedule(): void {
+    // A hidden tab throttles the timer to once a second or less. Skip the steps that are already past instead of
+    // playing them all at once; the step index moves with them so the bar structure stays intact.
+    const now = this.ctx.currentTime;
+    if (this.nextTime < now) {
+      const missed = Math.ceil((now - this.nextTime) / STEP);
+      this.nextTime += missed * STEP;
+      this.step = (this.step + missed) % (16 * 16);
+    }
     while (this.nextTime < this.ctx.currentTime + LOOKAHEAD) {
       this.play(this.step, this.nextTime);
       this.nextTime += STEP;

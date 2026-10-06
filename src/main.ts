@@ -116,6 +116,10 @@ let renderer: Renderer | null = null;
 let engine: AudioEngine | null = null;
 let media: MediaSource | null = null;
 const recorder = new Recorder();
+recorder.onError = (error) => {
+  fail(t.recordFailed, error);
+  sync();
+};
 const textCanvas = document.createElement("canvas");
 let textDrawn: string | null = null;
 let frames = 0;
@@ -320,16 +324,22 @@ function useScene(scene: Scene): void {
   update({ scene });
 }
 
+// A second click while the permission prompt is open would start a second stream and leak the first.
+let cameraPending = false;
+
 async function toggleCamera(): Promise<void> {
-  if (!media) return;
+  if (!media || cameraPending) return;
   if (media.kind === "camera") {
     media.useScene();
   } else {
+    cameraPending = true;
     try {
       await media.useCamera();
     } catch (error) {
       fail(t.cameraFailed, error);
       media.useScene();
+    } finally {
+      cameraPending = false;
     }
   }
   sync();
@@ -352,8 +362,8 @@ async function openFile(file: File): Promise<void> {
     // A song or a video brings its own sound; two tracks at once is noise.
     if (kind !== "image") engine.demo.stop();
   } catch (error) {
+    // MediaSource keeps the current source when a file cannot be read, so the camera survives a HEIC drop.
     fail(t.fileFailed, error);
-    media.useScene();
   }
   sync();
 }
@@ -433,10 +443,17 @@ function saveHtml(): void {
   toast(t.saved);
 }
 
+// The desktop app runs from file://, which means nothing to anyone else; share the web demo with the same look.
+const WEB_URL = "https://mrsarac.github.io/glyphbooth/";
+
 async function copyLink(): Promise<void> {
   persist(true);
+  const link =
+    location.protocol === "file:"
+      ? `${WEB_URL}#${toHash(settings)}`
+      : location.href;
   try {
-    await copyText(location.href);
+    await copyText(link);
     toast(t.linkCopied);
   } catch (error) {
     fail(t.copyFailed, error);
@@ -531,6 +548,14 @@ function onKey(event: KeyboardEvent): void {
 
 window.addEventListener("keydown", onKey);
 
+// Browsers may suspend audio (another tab took the device, the tab slept); any gesture or return wakes it.
+const resumeAudio = () => void engine?.resume().catch(() => {});
+window.addEventListener("pointerdown", resumeAudio);
+window.addEventListener("keydown", resumeAudio);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") resumeAudio();
+});
+
 // --- Drag and drop ------------------------------------------------------------------------------------------------
 
 let dragDepth = 0;
@@ -585,7 +610,12 @@ function resize(): void {
   updateView();
   if (!renderer) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  renderer.resize(canvas.clientWidth * dpr, canvas.clientHeight * dpr);
+  try {
+    renderer.resize(canvas.clientWidth * dpr, canvas.clientHeight * dpr);
+  } catch (error) {
+    // The old targets are still in place, so the picture keeps its previous size.
+    reportError(error);
+  }
 }
 
 function createRenderer(): boolean {
@@ -657,10 +687,12 @@ function loop(now: number): void {
 }
 
 // The atlas and the text canvas are drawn with JetBrains Mono; until it loads they would use a fallback font.
+// Turkish letters (Ş Ğ İ ı) live in a separate subset file, which only loads when asked for by its characters.
 const fontsReady = Promise.race([
   Promise.all([
     document.fonts.load('500 56px "JetBrains Mono"'),
     document.fonts.load('800 56px "JetBrains Mono"'),
+    document.fonts.load('800 56px "JetBrains Mono"', "ŞĞİıÇÖÜ"),
   ]),
   new Promise((resolve) => window.setTimeout(resolve, 4000)),
 ]);
@@ -670,6 +702,12 @@ void fontsReady
     renderer?.invalidateAtlas();
     textDrawn = null;
   });
+
+// Any subset that arrives later (a Turkish letter typed into the text scene) redraws the glyphs with it.
+document.fonts.addEventListener("loadingdone", () => {
+  renderer?.invalidateAtlas();
+  textDrawn = null;
+});
 
 // --- Start --------------------------------------------------------------------------------------------------------
 

@@ -89,6 +89,8 @@ export class AudioEngine {
     });
     const node = this.ctx.createMediaStreamSource(stream);
     node.connect(this.analyser);
+    // Recorded with the video, never sent to the speakers (that would feed back).
+    node.connect(this.recordStream);
     this.mic = { stream, node };
   }
 

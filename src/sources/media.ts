@@ -6,12 +6,18 @@ import type { MediaInput } from "../render/renderer";
 
 export type SourceKind = "scene" | "camera" | "screen" | "file";
 
+// Images are drawn once into a canvas no larger than this. A 12 MP photo would otherwise exceed the texture limit
+// of many GPUs (and draw black), and it is far more detail than the cells can show.
+const IMAGE_MAX = 2048;
+// The text canvas stays inside the texture size every WebGL2 GPU supports.
+const TEXT_MAX = 2048;
+
 export class MediaSource {
   kind: SourceKind = "scene";
   label = "";
   private stream: MediaStream | null = null;
   private readonly video: HTMLVideoElement;
-  private image: HTMLImageElement | null = null;
+  private image: HTMLCanvasElement | null = null;
   private objectUrl: string | null = null;
   // Files that are only audio: the scene keeps drawing, the file is heard.
   private audioOnly = false;
@@ -105,13 +111,16 @@ export class MediaSource {
     const type = file.type || guessType(file.name);
     const url = URL.createObjectURL(file);
     if (type.startsWith("image/")) {
-      const image = new Image();
-      image.decoding = "async";
-      image.src = url;
-      await image.decode();
+      // Decoding happens before release(): a file the browser cannot read (HEIC in Chrome) leaves the current
+      // source running.
+      let image: HTMLCanvasElement;
+      try {
+        image = await decodeImage(url);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
       this.release();
       this.image = image;
-      this.objectUrl = url;
       this.kind = "file";
       this.label = file.name;
       return "image";
@@ -119,10 +128,16 @@ export class MediaSource {
     if (type.startsWith("video/") || type.startsWith("audio/")) {
       this.release();
       this.objectUrl = url;
-      this.video.muted = false;
-      this.video.src = url;
-      this.audio.attachElement(this.video);
-      await this.video.play();
+      try {
+        this.video.muted = false;
+        this.video.src = url;
+        this.audio.attachElement(this.video);
+        await this.video.play();
+      } catch (error) {
+        // The previous source is already gone; fall back to the scene rather than a dead video.
+        this.useScene();
+        throw error;
+      }
       this.audioOnly = type.startsWith("audio/") || this.video.videoWidth === 0;
       this.kind = "file";
       this.label = file.name;
@@ -131,6 +146,24 @@ export class MediaSource {
     URL.revokeObjectURL(url);
     throw new Error(`Unsupported file: ${file.name}`);
   }
+}
+
+async function decodeImage(url: string): Promise<HTMLCanvasElement> {
+  const image = new Image();
+  image.decoding = "async";
+  image.src = url;
+  await image.decode();
+  const scale = Math.min(
+    1,
+    IMAGE_MAX / Math.max(image.naturalWidth, image.naturalHeight),
+  );
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("2D canvas is not available");
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas;
 }
 
 function guessType(name: string): string {
@@ -153,12 +186,18 @@ export function drawText(
   const lines = value.split(/\\n|\n/).slice(0, 3);
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  const size = 220;
+  // 40 characters at 220 px would be ~5400 px wide; shrink the font so the canvas fits TEXT_MAX.
+  let size = 220;
   ctx.font = `800 ${size}px ${font}`;
-  const width = Math.max(
+  let width = Math.max(
     ...lines.map((line) => ctx.measureText(line).width),
     size,
   );
+  if (width + size * 0.6 > TEXT_MAX) {
+    const scale = TEXT_MAX / (width + size * 0.6);
+    size = Math.floor(size * scale);
+    width *= scale;
+  }
   canvas.width = Math.ceil(width + size * 0.6);
   canvas.height = Math.ceil(size * 1.15 * lines.length + size * 0.4);
   ctx.fillStyle = "#000";
