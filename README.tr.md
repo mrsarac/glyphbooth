@@ -22,9 +22,9 @@ Glyphbooth bir WebGL2 uygulamasıdır. Tarayıcıda ve macOS, Windows ve Linux m
 | macOS, Apple Silicon (M1 ve üstü) | `Glyphbooth-<sürüm>-mac-arm64.dmg` |
 | macOS, Intel | `Glyphbooth-<sürüm>-mac-x64.dmg` |
 | Windows 10 ve üstü, 64 bit | `Glyphbooth-<sürüm>-win-x64.exe` |
-| Linux, 64 bit | `Glyphbooth-<sürüm>-linux-x64.AppImage` |
+| Linux, 64 bit | `Glyphbooth-<sürüm>-linux-x86_64.AppImage` |
 
-macOS uygulaması Apple tarafından onaylanmamıştır. [macOS'ta ilk açılış](#macosta-ilk-açılış) bölümüne bak.
+macOS uygulaması v0.1.1 sürümünden itibaren Apple tarafından imzalı ve onaylıdır (notarized). [macOS'ta ilk açılış](#macosta-ilk-açılış) bölümüne bak.
 
 <p align="center"><img src="docs/media/demo.gif" alt="Glyphbooth beş farklı görünüm arasında geçiş yapıyor" width="800"></p>
 
@@ -62,7 +62,9 @@ Tüm kısayollar harf veya rakamdır. Her klavye düzeninde çalışır.
 
 ## macOS'ta ilk açılış
 
-`.dmg` dosyası Apple tarafından onaylanmamıştır (notarize edilmemiştir). macOS ilk açılışı engeller. İki yoldan birini seç.
+v0.1.1 sürümünden itibaren `.dmg` dosyası Developer ID ile imzalıdır ve Apple tarafından onaylanmıştır (notarized). Dosyayı aç, **Glyphbooth** uygulamasını **Applications** klasörüne sürükle ve normal şekilde başlat.
+
+**Yalnızca v0.1.0 için:** bu sürüm onaylı değildir. macOS ilk açılışı engeller. İki yoldan birini seç.
 
 **Yol 1: Sistem Ayarları**
 
@@ -97,15 +99,15 @@ Windows'ta ekran yakalama sistem sesini de alır.
 
 ## Linux'ta ilk açılış
 
-1. Dosyayı çalıştırılabilir yap: `chmod +x Glyphbooth-*-linux-x64.AppImage`
-2. Çalıştır: `./Glyphbooth-*-linux-x64.AppImage`
+1. Dosyayı çalıştırılabilir yap: `chmod +x Glyphbooth-*-linux-x86_64.AppImage`
+2. Çalıştır: `./Glyphbooth-*-linux-x86_64.AppImage`
 
 Uygulama açılmazsa FUSE 2 kur: Ubuntu 24.04'te `sudo apt install libfuse2t64`, Ubuntu 22.04'te `sudo apt install libfuse2`.
 
 Ubuntu 24.04, Chromium sandbox'ını AppArmor ile kısıtlar. Uygulama SUID sandbox mesajıyla duruyorsa `--no-sandbox` ile çalıştır:
 
 ```bash
-./Glyphbooth-*-linux-x64.AppImage --no-sandbox
+./Glyphbooth-*-linux-x86_64.AppImage --no-sandbox
 ```
 
 ## Kayıt notları

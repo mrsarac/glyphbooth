@@ -22,9 +22,9 @@ Glyphbooth is a WebGL2 app that runs in the browser and as a desktop app for mac
 | macOS, Apple Silicon (M1 and newer) | `Glyphbooth-<version>-mac-arm64.dmg` |
 | macOS, Intel | `Glyphbooth-<version>-mac-x64.dmg` |
 | Windows 10 and newer, 64-bit | `Glyphbooth-<version>-win-x64.exe` |
-| Linux, 64-bit | `Glyphbooth-<version>-linux-x64.AppImage` |
+| Linux, 64-bit | `Glyphbooth-<version>-linux-x86_64.AppImage` |
 
-The macOS app is not notarized by Apple. See [First launch on macOS](#first-launch-on-macos).
+From v0.1.1 the macOS app is signed and notarized by Apple. See [First launch on macOS](#first-launch-on-macos).
 
 <p align="center"><img src="docs/media/demo.gif" alt="Glyphbooth cycling through five looks" width="800"></p>
 
@@ -80,7 +80,9 @@ Every shortcut is a letter or a digit, so they work on any keyboard layout.
 
 ## First launch on macOS
 
-The `.dmg` is not notarized by Apple. macOS blocks the first launch. Choose one of the two ways to open it.
+From v0.1.1 the `.dmg` is signed with a Developer ID and notarized by Apple. Open it, drag **Glyphbooth** into **Applications** and start it as usual.
+
+**Only for v0.1.0:** that build is not notarized. macOS blocks the first launch. Choose one of the two ways to open it.
 
 **Way 1: System Settings**
 
@@ -115,15 +117,15 @@ Screen capture on Windows includes system sound.
 
 ## First launch on Linux
 
-1. Make the file executable: `chmod +x Glyphbooth-*-linux-x64.AppImage`
-2. Run it: `./Glyphbooth-*-linux-x64.AppImage`
+1. Make the file executable: `chmod +x Glyphbooth-*-linux-x86_64.AppImage`
+2. Run it: `./Glyphbooth-*-linux-x86_64.AppImage`
 
 If it does not start, install FUSE 2: `sudo apt install libfuse2t64` on Ubuntu 24.04, or `sudo apt install libfuse2` on Ubuntu 22.04.
 
 Ubuntu 24.04 restricts the Chromium sandbox with AppArmor. If the app aborts with a SUID sandbox message, run it with `--no-sandbox`:
 
 ```bash
-./Glyphbooth-*-linux-x64.AppImage --no-sandbox
+./Glyphbooth-*-linux-x86_64.AppImage --no-sandbox
 ```
 
 ## Recording notes

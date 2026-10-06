@@ -1,7 +1,7 @@
 {
   "name": "glyphbooth",
   "productName": "Glyphbooth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Turn your camera, screen, video and music into living ASCII, dither, halftone and braille art.",
   "author": "Mustafa Saraç",
   "license": "MIT",
@@ -21,9 +21,10 @@
     "test:e2e": "playwright test",
     "app": "npm run build && electron .",
     "dist": "npm run build && electron-builder --publish never",
-    "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --publish never -c.mac.identity=- -c.mac.notarize=false -c.mac.hardenedRuntime=false -c.dmg.sign=false",
     "dist:win": "npm run build && electron-builder --win --publish never",
-    "dist:linux": "npm run build && electron-builder --linux --publish never"
+    "dist:linux": "npm run build && electron-builder --linux --publish never",
+    "dist:mac:signed": "npm run build && electron-builder --mac --publish never"
   },
   "build": {
     "appId": "io.github.mrsarac.glyphbooth",
@@ -49,14 +50,17 @@
           ]
         }
       ],
-      "identity": "-",
-      "hardenedRuntime": false,
+      "hardenedRuntime": true,
       "extendInfo": {
         "NSCameraUsageDescription": "Glyphbooth turns your camera into ASCII and dither art. Nothing leaves your computer.",
         "NSMicrophoneUsageDescription": "Glyphbooth listens to the microphone so the picture can react to sound. Nothing is recorded unless you press record.",
         "NSScreenCaptureUsageDescription": "Glyphbooth can turn your screen into ASCII and dither art."
       },
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
     },
     "win": {
       "target": [
@@ -84,6 +88,9 @@
       ],
       "category": "Graphics",
       "icon": "build/icon.png"
+    },
+    "dmg": {
+      "sign": true
     }
   },
   "devDependencies": {
