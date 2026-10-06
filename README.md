@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/mrsarac/glyphbooth/actions/workflows/ci.yml/badge.svg)](https://github.com/mrsarac/glyphbooth/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Live demo](https://img.shields.io/badge/live%20demo-mrsarac.github.io%2Fglyphbooth-4cff7a)](https://mrsarac.github.io/glyphbooth/)
+[![Live demo](https://img.shields.io/badge/live%20demo-glyphbooth.mustafasarac.com-4cff7a)](https://glyphbooth.mustafasarac.com/)
 
 English | [Türkçe](README.tr.md)
 
@@ -14,7 +14,7 @@ Glyphbooth is a WebGL2 app that runs in the browser and as a desktop app for mac
 
 ## Try it
 
-- **In the browser:** [mrsarac.github.io/glyphbooth](https://mrsarac.github.io/glyphbooth/). Press **Start**. A scene and a built-in beat play at once. No permission is asked until you press `C` (camera) or `M` (microphone).
+- **In the browser:** [glyphbooth.mustafasarac.com](https://glyphbooth.mustafasarac.com/). Press **Start**. A scene and a built-in beat play at once. No permission is asked until you press `C` (camera) or `M` (microphone).
 - **Desktop app:** download the latest file from [Releases](https://github.com/mrsarac/glyphbooth/releases/latest).
 
 | System | File |

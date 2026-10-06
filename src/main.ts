@@ -446,7 +446,7 @@ function saveHtml(): void {
 }
 
 // The desktop app runs from file://, which means nothing to anyone else; share the web demo with the same look.
-const WEB_URL = "https://mrsarac.github.io/glyphbooth/";
+const WEB_URL = "https://glyphbooth.mustafasarac.com/";
 
 async function copyLink(): Promise<void> {
   persist(true);

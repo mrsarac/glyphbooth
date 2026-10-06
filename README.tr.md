@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/mrsarac/glyphbooth/actions/workflows/ci.yml/badge.svg)](https://github.com/mrsarac/glyphbooth/actions/workflows/ci.yml)
 [![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
-[![Canlı demo](https://img.shields.io/badge/canl%C4%B1%20demo-mrsarac.github.io%2Fglyphbooth-4cff7a)](https://mrsarac.github.io/glyphbooth/)
+[![Canlı demo](https://img.shields.io/badge/canl%C4%B1%20demo-glyphbooth.mustafasarac.com-4cff7a)](https://glyphbooth.mustafasarac.com/)
 
 [English](README.md) | Türkçe
 
@@ -14,7 +14,7 @@ Glyphbooth bir WebGL2 uygulamasıdır. Tarayıcıda ve macOS, Windows ve Linux m
 
 ## Dene
 
-- **Tarayıcıda:** [mrsarac.github.io/glyphbooth](https://mrsarac.github.io/glyphbooth/). **Başla** düğmesine bas. Bir sahne ve dahili bir ritim çalar. `C` (kamera) veya `M` (mikrofon) tuşuna basana kadar izin istenmez.
+- **Tarayıcıda:** [glyphbooth.mustafasarac.com](https://glyphbooth.mustafasarac.com/). **Başla** düğmesine bas. Bir sahne ve dahili bir ritim çalar. `C` (kamera) veya `M` (mikrofon) tuşuna basana kadar izin istenmez.
 - **Masaüstü uygulaması:** son sürümü [Releases](https://github.com/mrsarac/glyphbooth/releases/latest) sayfasından indir.
 
 | Sistem | Dosya |
