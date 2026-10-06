@@ -24,7 +24,7 @@ Glyphbooth is a WebGL2 app that runs in the browser and as a desktop app for mac
 | Windows 10 and newer, 64-bit | `Glyphbooth-<version>-win-x64.exe` |
 | Linux, 64-bit | `Glyphbooth-<version>-linux-x64.AppImage` |
 
-The macOS app is not signed by Apple. See [First launch on macOS](#first-launch-on-macos).
+The macOS app is not notarized by Apple. See [First launch on macOS](#first-launch-on-macos).
 
 <p align="center"><img src="docs/media/demo.gif" alt="Glyphbooth cycling through five looks" width="800"></p>
 
@@ -80,13 +80,14 @@ Every shortcut is a letter or a digit, so they work on any keyboard layout.
 
 ## First launch on macOS
 
-The `.dmg` is not signed or notarized by Apple. macOS blocks the first launch. Choose one of the two ways to open it.
+The `.dmg` is not notarized by Apple. macOS blocks the first launch. Choose one of the two ways to open it.
 
-**Way 1: right-click**
+**Way 1: System Settings**
 
 1. Open the `.dmg` and drag **Glyphbooth** into **Applications**.
-2. In **Applications**, right-click **Glyphbooth** and choose **Open**.
-3. In the dialog, click **Open**. macOS remembers your choice.
+2. Open **Glyphbooth** once. macOS shows a warning. Click **Done**.
+3. Open **System Settings → Privacy & Security**. Scroll down to **Security**.
+4. Click **Open Anyway** next to "Glyphbooth was blocked", then confirm with your password.
 
 **Way 2: Terminal**
 
@@ -116,6 +117,19 @@ Screen capture on Windows includes system sound.
 
 1. Make the file executable: `chmod +x Glyphbooth-*-linux-x64.AppImage`
 2. Run it: `./Glyphbooth-*-linux-x64.AppImage`
+
+If it does not start, install FUSE 2: `sudo apt install libfuse2t64` on Ubuntu 24.04, or `sudo apt install libfuse2` on Ubuntu 22.04.
+
+Ubuntu 24.04 restricts the Chromium sandbox with AppArmor. If the app aborts with a SUID sandbox message, run it with `--no-sandbox`:
+
+```bash
+./Glyphbooth-*-linux-x64.AppImage --no-sandbox
+```
+
+## Recording notes
+
+- Safari records MP4. Other browsers record WebM.
+- Microphone audio is included in recordings.
 
 ## Privacy
 

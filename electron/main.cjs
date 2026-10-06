@@ -24,6 +24,11 @@ function isHttp(url) {
   }
 }
 
+function stripHash(url) {
+  const i = url.indexOf('#');
+  return i === -1 ? url : url.slice(0, i);
+}
+
 function setupSession() {
   const ses = session.defaultSession;
 
@@ -75,6 +80,8 @@ function createWindow() {
   });
 
   wc.on('will-navigate', (event, url) => {
+    // Allow reload and hash changes on the app page itself.
+    if (stripHash(url) === stripHash(wc.getURL())) return;
     event.preventDefault();
     if (isHttp(url)) shell.openExternal(url);
   });
