@@ -58,6 +58,8 @@ export const STRINGS = {
     micFailed: "Microphone is not available",
     fileFailed: "This file cannot be opened",
     recordFailed: "Recording is not available here",
+    copyFailed: "The clipboard is not available here",
+    showPanel: "Show panel",
     nowPlaying: "Playing",
     scenes: {
       orb: "Orb",
@@ -147,6 +149,8 @@ export const STRINGS = {
     micFailed: "Mikrofon kullanılamıyor",
     fileFailed: "Bu dosya açılamıyor",
     recordFailed: "Burada video kaydı yapılamıyor",
+    copyFailed: "Pano burada kullanılamıyor",
+    showPanel: "Paneli göster",
     nowPlaying: "Çalıyor",
     scenes: {
       orb: "Küre",

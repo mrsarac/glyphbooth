@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Glyphbooth</title>
+    <meta
+      name="description"
+      content="Turn your camera, screen, video and music into living ASCII, dither, halftone and braille art. Runs in your browser; nothing leaves your computer."
+    />
+    <meta name="theme-color" content="#030605" />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Glyphbooth" />
+    <meta
+      property="og:description"
+      content="Turn your camera, screen, video and music into living ASCII, dither, halftone and braille art."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23030605'/%3E%3Crect x='5' y='7' width='5' height='18' fill='%234cff7a' opacity='.35'/%3E%3Crect x='13' y='7' width='5' height='18' fill='%234cff7a' opacity='.65'/%3E%3Crect x='21' y='7' width='6' height='18' fill='%234cff7a'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <canvas id="stage" aria-label="Glyphbooth picture"></canvas>
+
+    <div id="splash">
+      <div class="splash-inner">
+        <pre class="wordmark" role="img" aria-label="Glyphbooth">
+ ██████╗ ██╗     ██╗   ██╗██████╗ ██╗  ██╗██████╗  ██████╗  ██████╗ ████████╗██╗  ██╗
+██╔════╝ ██║     ╚██╗ ██╔╝██╔══██╗██║  ██║██╔══██╗██╔═══██╗██╔═══██╗╚══██╔══╝██║  ██║
+██║  ███╗██║      ╚████╔╝ ██████╔╝███████║██████╔╝██║   ██║██║   ██║   ██║   ███████║
+██║   ██║██║       ╚██╔╝  ██╔═══╝ ██╔══██║██╔══██╗██║   ██║██║   ██║   ██║   ██╔══██║
+╚██████╔╝███████╗   ██║   ██║     ██║  ██║██████╔╝╚██████╔╝╚██████╔╝   ██║   ██║  ██║
+ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝     ╚═╝  ╚═╝╚═════╝  ╚═════╝  ╚═════╝    ╚═╝   ╚═╝  ╚═╝</pre>
+        <p class="tagline" id="tagline">
+          Turn your camera, screen, video and music into living ASCII, dither,
+          halftone and braille art.
+        </p>
+        <button id="start" type="button" disabled>
+          <span id="start-label">Start</span
+          ><span class="cursor" aria-hidden="true"></span>
+        </button>
+        <p class="hint" id="start-hint">
+          Sound on. Nothing leaves your computer.
+        </p>
+      </div>
+    </div>
+
+    <button
+      id="show-panel"
+      type="button"
+      aria-label="Show panel"
+      title="Show panel"
+    >
+      ▓▒░
+    </button>
+    <div id="drop" hidden>
+      <p id="drop-label">Drop an image, video or song</p>
+    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <div id="fatal" role="alert" hidden></div>
+
+    <noscript>
+      <p class="noscript">
+        Glyphbooth needs JavaScript and WebGL2 to draw. Turn JavaScript on and
+        reload the page.
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

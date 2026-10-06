@@ -158,24 +158,37 @@ export class Panel {
       "button",
       {
         type: "button",
+        "data-source": "scene",
         onClick: () => this.actions.scene(sceneSelect.value as Scene),
       },
       t.scene,
     );
     const cameraButton = h(
       "button",
-      { type: "button", onClick: () => this.actions.camera() },
+      {
+        type: "button",
+        "data-source": "camera",
+        onClick: () => this.actions.camera(),
+      },
       t.camera,
       h("kbd", {}, "C"),
     );
     const screenButton = h(
       "button",
-      { type: "button", onClick: () => this.actions.screen() },
+      {
+        type: "button",
+        "data-source": "screen",
+        onClick: () => this.actions.screen(),
+      },
       t.screen,
     );
     const fileButton = h(
       "button",
-      { type: "button", onClick: () => this.fileInput.click() },
+      {
+        type: "button",
+        "data-source": "file",
+        onClick: () => this.fileInput.click(),
+      },
       t.openFile,
     );
     this.sourceButtons.set("scene", sceneButton);
@@ -187,7 +200,11 @@ export class Panel {
     MODES.forEach((mode, index) => {
       const button = h(
         "button",
-        { type: "button", onClick: () => this.actions.update({ mode }) },
+        {
+          type: "button",
+          "data-mode": mode,
+          onClick: () => this.actions.update({ mode }),
+        },
         t.modes[mode],
         h("kbd", {}, String(index + 1)),
       );
@@ -284,13 +301,21 @@ export class Panel {
 
     const demoButton = h(
       "button",
-      { type: "button", onClick: () => this.actions.demo() },
+      {
+        type: "button",
+        "data-action": "demo",
+        onClick: () => this.actions.demo(),
+      },
       t.demo,
       h("kbd", {}, "D"),
     );
     const micButton = h(
       "button",
-      { type: "button", onClick: () => this.actions.mic() },
+      {
+        type: "button",
+        "data-action": "mic",
+        onClick: () => this.actions.mic(),
+      },
       t.mic,
       h("kbd", {}, "M"),
     );
@@ -314,6 +339,7 @@ export class Panel {
       {
         type: "button",
         className: "record",
+        "data-action": "record",
         onClick: () => this.actions.record(),
       },
       t.record,
@@ -448,6 +474,7 @@ export class Panel {
               {
                 type: "button",
                 className: "accent",
+                "data-action": "random",
                 onClick: () => this.actions.random(),
               },
               t.random,
@@ -501,25 +528,41 @@ export class Panel {
             { className: "grid-buttons" },
             h(
               "button",
-              { type: "button", onClick: () => this.actions.snapshot() },
+              {
+                type: "button",
+                "data-action": "snapshot",
+                onClick: () => this.actions.snapshot(),
+              },
               t.snapshot,
               h("kbd", {}, "S"),
             ),
             recordButton,
             h(
               "button",
-              { type: "button", onClick: () => this.actions.copyText() },
+              {
+                type: "button",
+                "data-action": "copy-text",
+                onClick: () => this.actions.copyText(),
+              },
               t.copyText,
               h("kbd", {}, "T"),
             ),
             h(
               "button",
-              { type: "button", onClick: () => this.actions.saveHtml() },
+              {
+                type: "button",
+                "data-action": "save-html",
+                onClick: () => this.actions.saveHtml(),
+              },
               t.saveHtml,
             ),
             h(
               "button",
-              { type: "button", onClick: () => this.actions.copyLink() },
+              {
+                type: "button",
+                "data-action": "copy-link",
+                onClick: () => this.actions.copyLink(),
+              },
               t.shareLink,
             ),
           ),

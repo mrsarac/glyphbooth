@@ -108,7 +108,8 @@ vec3 tunnelScene(vec2 uv) {
 }
 
 vec3 flowScene(vec2 uv) {
-  vec2 p = aspectPoint(uv) * 2.4;
+  // Broad shapes: finer warping turns into noise once it is cut into cells.
+  vec2 p = aspectPoint(uv) * 1.5;
   float t = uTime * 0.12;
   vec2 q = vec2(fbm(vec3(p, t)), fbm(vec3(p + vec2(5.2, 1.3), t)));
   vec2 r = vec2(
@@ -117,7 +118,10 @@ vec3 flowScene(vec2 uv) {
   );
   float f = fbm(vec3(p + 3.5 * r, t));
   vec3 col = cosPalette(f * 0.8 + uMid * 0.15 * uReact + uTime * 0.02, vec3(0.5), vec3(0.5), vec3(1.0, 0.9, 0.8), vec3(0.0, 0.15, 0.3));
-  float light = clamp(f * f * 2.6 + length(q) * 0.5 + 0.1, 0.0, 1.2);
+  // fbm sits around 0, so lift it: the scene should fill the frame, not show a few bright specks on black.
+  float light = clamp(0.45 + f * 1.4 + length(q) * 0.5, 0.0, 1.25);
+  // Deep blues have almost no luma, and the effect pass works on luma: lift the color so brightness follows light.
+  col = col * 0.6 + 0.4;
   return col * light * (0.85 + uBeat * 0.35 * uReact);
 }
 

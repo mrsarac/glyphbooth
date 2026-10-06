@@ -1,0 +1,1018 @@
+/* Glyphbooth: a dark instrument. The canvas fills the window; the panel is a translucent rack module on the right.
+   One accent (phosphor green) marks what is on; everything else stays quiet so the picture leads. */
+
+:root {
+  --void: #030605;
+  --panel: rgba(5, 11, 8, 0.74);
+  --panel-solid: #08110c;
+  --ink: #dcebe0;
+  --ink-dim: #93a99b;
+  --ink-faint: #5d7266;
+  --rule: rgba(130, 255, 165, 0.13);
+  --rule-strong: rgba(130, 255, 165, 0.28);
+  --well: rgba(255, 255, 255, 0.035);
+  --phosphor: #4cff7a;
+  --phosphor-deep: #1c7a3a;
+  --phosphor-wash: rgba(76, 255, 122, 0.11);
+  --alert: #ff5340;
+  --panel-w: 344px;
+  --gap: 12px;
+  --radius: 9px;
+  --font: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--void);
+}
+
+body {
+  color: var(--ink);
+  font: 400 16px/1.5 var(--font);
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.idle.panel-hidden {
+  cursor: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 2px;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--void);
+}
+
+/* --- Splash ---------------------------------------------------------------------------------------------------- */
+
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(
+      ellipse 70% 55% at 50% 42%,
+      rgba(40, 140, 70, 0.16),
+      transparent 70%
+    ),
+    var(--void);
+  transition:
+    opacity 0.6s ease,
+    visibility 0s linear 0.6s;
+}
+
+/* CRT lines over the whole splash. */
+#splash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.32) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+body.started #splash {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 100%;
+}
+
+/* 85 columns wide: the size follows the window so the wordmark never scrolls. */
+.wordmark {
+  margin: 0 0 clamp(20px, 4vh, 40px);
+  font: 400 min(1.68vw, 19px) / 1 var(--font);
+  letter-spacing: 0;
+  white-space: pre;
+  color: transparent;
+  background: linear-gradient(
+    100deg,
+    #1f9446 0%,
+    #3fe56c 30%,
+    #4cff7a 42%,
+    #eaffef 50%,
+    #4cff7a 58%,
+    #3fe56c 70%,
+    #1f9446 100%
+  );
+  background-size: 260% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 14px rgba(76, 255, 122, 0.28));
+  animation: shimmer 5.5s linear infinite;
+  user-select: none;
+}
+
+.wordmark b {
+  font-weight: 400;
+}
+
+/* The drop-shadow outline of each letter, painted over the shimmer in a dim, steady green. */
+.wordmark i {
+  font-style: normal;
+  -webkit-text-fill-color: #1b5a31;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -160% 0;
+  }
+}
+
+.tagline {
+  margin: 0 0 32px;
+  max-width: 52ch;
+  font-size: clamp(16px, 1.6vw, 20px);
+  line-height: 1.55;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+#start {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 60px;
+  padding: 0 40px 0 44px;
+  border: 1px solid var(--phosphor);
+  border-radius: 12px;
+  background: var(--phosphor-wash);
+  color: var(--phosphor);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 0 rgba(76, 255, 122, 0),
+    inset 0 0 24px rgba(76, 255, 122, 0.08);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.2s ease,
+    color 0.15s ease;
+}
+
+#start:hover:not(:disabled),
+#start:focus-visible {
+  background: var(--phosphor);
+  color: var(--void);
+  box-shadow: 0 0 36px rgba(76, 255, 122, 0.45);
+}
+
+#start:disabled {
+  opacity: 0.45;
+  cursor: progress;
+}
+
+/* A terminal block cursor after the label. */
+#start .cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  margin-left: 6px;
+  background: currentColor;
+  animation: blink 1.1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.hint {
+  margin: 18px 0 0;
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+/* --- Panel ----------------------------------------------------------------------------------------------------- */
+
+.panel {
+  position: fixed;
+  z-index: 10;
+  top: var(--gap);
+  right: var(--gap);
+  bottom: var(--gap);
+  width: var(--panel-w);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  backdrop-filter: blur(20px) saturate(1.3);
+  overflow: hidden;
+  transition:
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.3s ease;
+}
+
+body:not(.started) .panel {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(calc(100% + var(--gap) * 2));
+}
+
+body.started .panel {
+  transition-delay: 0.15s;
+}
+
+body.panel-hidden .panel {
+  transform: translateX(calc(100% + var(--gap) * 2));
+  opacity: 0;
+  transition-delay: 0s;
+}
+
+body.fatal .panel {
+  display: none;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 12px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.brand {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.brand .logo {
+  color: var(--phosphor);
+  letter-spacing: 0;
+  text-shadow: 0 0 10px rgba(76, 255, 122, 0.5);
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 4px 20px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+.section {
+  display: grid;
+  gap: 14px;
+  padding: 18px 0 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Section names are engraved into the panel: a label and a rule that runs to the edge. */
+.section h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+}
+
+.section h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--rule-strong), transparent);
+}
+
+/* --- Controls -------------------------------------------------------------------------------------------------- */
+
+.panel button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--well);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.panel button:hover {
+  border-color: var(--rule-strong);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.panel button:active {
+  transform: translateY(1px);
+}
+
+/* On: the label lights up and a small LED glows in the corner, like a latched hardware switch. */
+.panel button[aria-pressed="true"] {
+  color: var(--phosphor);
+  border-color: rgba(76, 255, 122, 0.5);
+  background: var(--phosphor-wash);
+}
+
+.panel button[aria-pressed]::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  opacity: 0.5;
+}
+
+.panel button[aria-pressed="true"]::before {
+  background: var(--phosphor);
+  opacity: 1;
+  box-shadow: 0 0 6px var(--phosphor);
+}
+
+.panel button.record[aria-pressed="true"] {
+  color: var(--alert);
+  border-color: rgba(255, 83, 64, 0.55);
+  background: rgba(255, 83, 64, 0.1);
+}
+
+.panel button.record[aria-pressed="true"]::before {
+  background: var(--alert);
+  box-shadow: 0 0 8px var(--alert);
+  animation: blink 1s steps(1) infinite;
+}
+
+.panel button.accent {
+  color: var(--phosphor);
+  border-color: rgba(76, 255, 122, 0.4);
+}
+
+.panel button.accent:hover {
+  background: var(--phosphor-wash);
+}
+
+.panel button.icon {
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  color: var(--ink-dim);
+}
+
+kbd {
+  font: 500 11px/1 var(--font);
+  color: var(--ink-faint);
+  padding: 3px 5px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+/* Inside a button the key sits in the top-left corner, like a channel number, so long labels keep their room. */
+.panel button kbd {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  padding: 0;
+  border: 0;
+  font-size: 10px;
+}
+
+.panel button[aria-pressed="true"] kbd {
+  color: inherit;
+  border-color: currentColor;
+  opacity: 0.6;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.segmented.sources {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Five modes in two full rows: three on top, two below. */
+.segmented.modes {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.segmented.modes button {
+  grid-column: span 2;
+}
+
+.segmented.modes button:nth-child(n + 4) {
+  grid-column: span 3;
+}
+
+.grid-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.grid-buttons button:last-child {
+  grid-column: 1 / -1;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field > span,
+.slider-head > span:first-child {
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.row {
+  display: grid;
+  gap: 8px;
+}
+
+.row.two {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+
+select,
+.panel input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background-color: var(--well);
+  font-size: 15px;
+}
+
+select {
+  appearance: none;
+  padding-right: 36px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2393a99b' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+select:hover,
+.panel input[type="text"]:hover {
+  border-color: var(--rule-strong);
+}
+
+/* Windows draws the open list with these colors. */
+option {
+  background: var(--panel-solid);
+  color: var(--ink);
+}
+
+.panel input[type="text"]::placeholder {
+  color: var(--ink-faint);
+}
+
+.now-playing {
+  font-size: 14px;
+  color: var(--ink-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.now-playing::before {
+  content: "● ";
+  color: var(--phosphor);
+}
+
+/* Palette swatches: each is the palette's own ramp, dark to light. */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.panel button.swatch {
+  min-height: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+}
+
+.panel button.swatch:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.panel button.swatch[aria-checked="true"] {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 2px;
+  border-color: transparent;
+}
+
+/* Checkboxes as small toggle switches. */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.check input {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 11px;
+  background: var(--well);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.check input::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  transition: transform 0.15s ease;
+}
+
+.check input:checked {
+  background: var(--phosphor-wash);
+  border-color: var(--phosphor);
+}
+
+.check input:checked::before {
+  transform: translateX(18px);
+  background: var(--phosphor);
+  box-shadow: 0 0 6px var(--phosphor);
+}
+
+/* Sliders as faders: a thin groove and a square cap. */
+.slider {
+  display: grid;
+  gap: 2px;
+}
+
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.slider output {
+  font-size: 14px;
+  color: var(--phosphor);
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 30px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rule-strong);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rule-strong);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 24px;
+  margin-top: -10px;
+  border-radius: 3px;
+  border: 0;
+  background: linear-gradient(
+    to bottom,
+    #f2fbf4 0 45%,
+    var(--phosphor) 45% 55%,
+    #f2fbf4 55%
+  );
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 24px;
+  border-radius: 3px;
+  border: 0;
+  background: linear-gradient(
+    to bottom,
+    #f2fbf4 0 45%,
+    var(--phosphor) 45% 55%,
+    #f2fbf4 55%
+  );
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+input[type="range"]:focus-visible {
+  outline: none;
+}
+
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--phosphor);
+}
+
+input[type="range"]:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--phosphor);
+}
+
+/* Bass, mid and treble as three level bars in grooves. */
+.meter {
+  display: grid;
+  gap: 4px;
+  height: 26px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--well) 0 6px,
+    transparent 6px 10px
+  );
+}
+
+.meter i {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--phosphor-deep), var(--phosphor));
+}
+
+.meter i:nth-child(2) {
+  background: linear-gradient(90deg, var(--phosphor-deep), #9dffb5);
+}
+
+.meter i:nth-child(3) {
+  background: linear-gradient(90deg, var(--phosphor-deep), #e6fff0);
+}
+
+.only-ascii,
+.only-dither {
+  display: grid;
+  gap: 14px;
+}
+
+/* --- Panel footer ---------------------------------------------------------------------------------------------- */
+
+.panel-foot {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.help summary {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  font-size: 14px;
+  color: var(--ink-dim);
+  cursor: pointer;
+  list-style: none;
+}
+
+.help summary::-webkit-details-marker {
+  display: none;
+}
+
+.help summary::before {
+  content: "+";
+  width: 1.5em;
+  color: var(--phosphor);
+}
+
+.help[open] summary::before {
+  content: "−";
+}
+
+.help dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 4px 0 8px;
+  font-size: 14px;
+}
+
+.help dt {
+  text-align: right;
+}
+
+.help dd {
+  margin: 0;
+  color: var(--ink-dim);
+}
+
+.help kbd {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.foot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.foot-row a {
+  color: var(--ink-dim);
+  font-size: 14px;
+  text-decoration: none;
+  padding: 10px 0;
+}
+
+.foot-row a:hover {
+  color: var(--phosphor);
+}
+
+/* --- Floating pieces ------------------------------------------------------------------------------------------- */
+
+#show-panel {
+  position: fixed;
+  z-index: 11;
+  top: 16px;
+  right: 16px;
+  display: none;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--phosphor);
+  font-size: 16px;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+#show-panel:hover,
+#show-panel:focus-visible {
+  opacity: 1;
+}
+
+body.started.panel-hidden #show-panel {
+  display: block;
+}
+
+body.idle.panel-hidden #show-panel:not(:focus-visible) {
+  opacity: 0;
+}
+
+/* Recording with the panel hidden still shows a small red light. */
+body.recording.panel-hidden::after {
+  content: "";
+  position: fixed;
+  z-index: 11;
+  top: 30px;
+  left: 30px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--alert);
+  box-shadow: 0 0 10px var(--alert);
+  animation: blink 1s steps(1) infinite;
+}
+
+#toast {
+  position: fixed;
+  z-index: 40;
+  left: calc((100vw - var(--panel-w) - var(--gap)) / 2);
+  bottom: 28px;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 12px 20px;
+  border: 1px solid rgba(76, 255, 122, 0.4);
+  border-radius: 999px;
+  background: rgba(5, 11, 8, 0.92);
+  color: var(--ink);
+  font-size: 15px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.25s ease;
+}
+
+#toast:empty {
+  display: none;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+body.panel-hidden #toast {
+  left: 50%;
+}
+
+#drop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(3, 6, 5, 0.72);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+#drop::before {
+  content: "";
+  position: absolute;
+  inset: 20px;
+  border: 2px dashed var(--phosphor);
+  border-radius: 20px;
+}
+
+#drop p {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 32px);
+  font-weight: 800;
+  color: var(--phosphor);
+  text-align: center;
+}
+
+#fatal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-content: center;
+  padding: 24px 16px;
+  max-width: 40ch;
+  margin: auto;
+  font-size: 18px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+#fatal::before {
+  content: "▓▒░";
+  display: block;
+  margin-bottom: 16px;
+  color: var(--alert);
+  font-size: 28px;
+}
+
+.noscript {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  padding: 16px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* --- Small screens: the panel becomes a bottom sheet ----------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 45vh;
+    border-radius: 16px 16px 0 0;
+    border-bottom: 0;
+  }
+
+  body:not(.started) .panel,
+  body.panel-hidden .panel {
+    transform: translateY(100%);
+  }
+
+  .panel-head {
+    padding: 8px 8px 8px 16px;
+  }
+
+  .panel-body {
+    padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  #toast {
+    left: 50%;
+    top: 16px;
+    bottom: auto;
+    transform: translate(-50%, -12px);
+  }
+
+  #toast.show {
+    transform: translate(-50%, 0);
+  }
+
+  .tagline {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
