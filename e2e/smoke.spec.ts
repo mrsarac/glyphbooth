@@ -31,8 +31,9 @@ const test = base.extend<{ problems: string[] }>({
   },
 });
 
+// `?quality=low` makes the app render at reduced resolution; without a GPU (CI) full-size frames take seconds.
 async function start(page: Page, url = "/"): Promise<void> {
-  await page.goto(url);
+  await page.goto(url.replace(/^\/(?=[#]|$)/, "/?quality=low"));
   await expect(page.locator("#splash")).toBeVisible();
   await page.locator("#start").click();
   await expect(page.locator("body")).toHaveClass(/\bstarted\b/);
@@ -68,7 +69,7 @@ function differs(a: PNG, b: PNG): boolean {
 
 test.describe("Glyphbooth smoke", () => {
   test("loads cleanly, starts and renders frames", async ({ page, problems }) => {
-    await page.goto("/");
+    await page.goto("/?quality=low");
     await expect(page.locator("#splash")).toBeVisible();
     await expect(page.locator("#fatal")).toBeHidden();
     await page.locator("#start").click();

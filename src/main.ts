@@ -606,10 +606,14 @@ window.addEventListener("pointerdown", wake, { passive: true });
 
 // --- Renderer -----------------------------------------------------------------------------------------------------
 
+// `?quality=low` renders at a fraction of the screen resolution. The end-to-end tests use it on CI machines without a
+// GPU, where software WebGL needs seconds per full-size frame. The canvas keeps its CSS size, so the picture just softens.
+const lowQuality = new URLSearchParams(location.search).get("quality") === "low";
+
 function resize(): void {
   updateView();
   if (!renderer) return;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = lowQuality ? 0.3 : Math.min(window.devicePixelRatio || 1, 2);
   try {
     renderer.resize(canvas.clientWidth * dpr, canvas.clientHeight * dpr);
   } catch (error) {
