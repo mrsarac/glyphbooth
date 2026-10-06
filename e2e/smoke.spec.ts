@@ -187,7 +187,19 @@ test.describe("Glyphbooth smoke", () => {
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press("v");
     await page.waitForTimeout(1500);
-    const [download] = await Promise.all([page.waitForEvent("download"), page.keyboard.press("v")]);
+    const downloaded = page.waitForEvent("download", { timeout: 20_000 });
+    downloaded.catch(() => {});
+    await page.keyboard.press("v");
+    const download = await downloaded.catch(async (error) => {
+      const info = await page.evaluate(() => ({
+        body: document.body.className,
+        toast: document.querySelector("#toast")?.textContent,
+        types: ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].map((t) => `${t}=${MediaRecorder.isTypeSupported(t)}`),
+        frames: window.glyphbooth.frames,
+        errors: window.glyphbooth.errors,
+      }));
+      throw new Error(`no download after stopping the recording: ${JSON.stringify(info)}\n${error}`);
+    });
     expect(download.suggestedFilename()).toMatch(/\.webm$/);
     const path = await download.path();
     expect(statSync(path).size).toBeGreaterThan(0);
