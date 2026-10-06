@@ -182,11 +182,13 @@ test.describe("Glyphbooth smoke", () => {
     await expect(page.locator('[data-mode="dither"]')).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("recording with V twice downloads a non-empty .webm", async ({ page }) => {
+  test("recording with V twice (4 s) downloads a non-empty .webm", async ({ page }) => {
     await start(page);
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press("v");
-    await page.waitForTimeout(1500);
+    // MediaRecorder delivers its first data only after the encoder has started, which takes more than 1.5 s on a cold
+    // start. Stopping earlier yields an empty recording that the app (correctly) does not save.
+    await page.waitForTimeout(4000);
     const downloaded = page.waitForEvent("download", { timeout: 20_000 });
     downloaded.catch(() => {});
     await page.keyboard.press("v");
