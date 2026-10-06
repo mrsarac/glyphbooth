@@ -31,8 +31,9 @@ const test = base.extend<{ problems: string[] }>({
   },
 });
 
+// `?quality=low` makes the app render at reduced resolution; without a GPU (CI) full-size frames take seconds.
 async function start(page: Page, url = "/"): Promise<void> {
-  await page.goto(url);
+  await page.goto(url.replace(/^\/(?=[#]|$)/, "/?quality=low"));
   await expect(page.locator("#splash")).toBeVisible();
   await page.locator("#start").click();
   await expect(page.locator("body")).toHaveClass(/\bstarted\b/);
@@ -68,7 +69,7 @@ function differs(a: PNG, b: PNG): boolean {
 
 test.describe("Glyphbooth smoke", () => {
   test("loads cleanly, starts and renders frames", async ({ page, problems }) => {
-    await page.goto("/");
+    await page.goto("/?quality=low");
     await expect(page.locator("#splash")).toBeVisible();
     await expect(page.locator("#fatal")).toBeHidden();
     await page.locator("#start").click();
@@ -181,12 +182,26 @@ test.describe("Glyphbooth smoke", () => {
     await expect(page.locator('[data-mode="dither"]')).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("recording with V twice downloads a non-empty .webm", async ({ page }) => {
+  test("recording with V twice (4 s) downloads a non-empty .webm", async ({ page }) => {
     await start(page);
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press("v");
-    await page.waitForTimeout(1500);
-    const [download] = await Promise.all([page.waitForEvent("download"), page.keyboard.press("v")]);
+    // MediaRecorder delivers its first data only after the encoder has started, which takes more than 1.5 s on a cold
+    // start. Stopping earlier yields an empty recording that the app (correctly) does not save.
+    await page.waitForTimeout(4000);
+    const downloaded = page.waitForEvent("download", { timeout: 20_000 });
+    downloaded.catch(() => {});
+    await page.keyboard.press("v");
+    const download = await downloaded.catch(async (error) => {
+      const info = await page.evaluate(() => ({
+        body: document.body.className,
+        toast: document.querySelector("#toast")?.textContent,
+        types: ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].map((t) => `${t}=${MediaRecorder.isTypeSupported(t)}`),
+        frames: window.glyphbooth.frames,
+        errors: window.glyphbooth.errors,
+      }));
+      throw new Error(`no download after stopping the recording: ${JSON.stringify(info)}\n${error}`);
+    });
     expect(download.suggestedFilename()).toMatch(/\.webm$/);
     const path = await download.path();
     expect(statSync(path).size).toBeGreaterThan(0);
