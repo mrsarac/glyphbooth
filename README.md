@@ -1,21 +1,25 @@
-<p align="center"><img src="docs/media/hero.png" alt="Glyphbooth turning an animated orb into green ASCII art" width="860"></p>
-
 # Glyphbooth
 
-> Turn your camera, screen, video and music into live ASCII, dither, halftone, braille and pixel art.
+Turn your camera, screen, video and music into live ASCII, dither, halftone, braille and pixel art, in the browser or as a desktop app.
 
-[![CI](https://github.com/mrsarac/glyphbooth/actions/workflows/ci.yml/badge.svg)](https://github.com/mrsarac/glyphbooth/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Live demo](https://img.shields.io/badge/live%20demo-glyphbooth.mustafasarac.com-4cff7a)](https://glyphbooth.mustafasarac.com/)
+[![License: MIT](https://img.shields.io/github/license/mrsarac/glyphbooth)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/mrsarac/glyphbooth)](https://github.com/mrsarac/glyphbooth/releases/latest)
 
 English | [Türkçe](README.tr.md)
 
-Glyphbooth is a WebGL2 app that runs in the browser and as a desktop app for macOS, Windows and Linux. Point it at your webcam, your screen, a video, an image, a word you type, or a song. It redraws the picture as characters, dots or pixels, and the picture moves with the beat.
+<p align="center"><img src="docs/media/hero.png" alt="Glyphbooth turning an animated orb into green ASCII art" width="860"></p>
 
-## Try it
+**Live demo:** [glyphbooth.mustafasarac.com](https://glyphbooth.mustafasarac.com/)
 
-- **In the browser:** [glyphbooth.mustafasarac.com](https://glyphbooth.mustafasarac.com/). Press **Start**. A scene and a built-in beat play at once. No permission is asked until you press `C` (camera) or `M` (microphone).
-- **Desktop app:** download the latest file from [Releases](https://github.com/mrsarac/glyphbooth/releases/latest).
+## Why
+
+Text-mode and dithered visuals are fun to play with, and Glyphbooth makes them live: point it at your webcam, your screen, a video, an image, a word you type, or a song, and it redraws the picture as characters, dots or pixels that move with the beat. It runs entirely on your computer, with plain WebGL2 shaders and no account.
+
+## Quick start
+
+**In the browser:** open [glyphbooth.mustafasarac.com](https://glyphbooth.mustafasarac.com/) and press **Start**. A scene and a built-in beat play at once. No permission is asked until you press `C` (camera) or `M` (microphone).
+
+**Desktop app:** download the latest file from [Releases](https://github.com/mrsarac/glyphbooth/releases/latest).
 
 | System | File |
 |---|---|
@@ -24,7 +28,17 @@ Glyphbooth is a WebGL2 app that runs in the browser and as a desktop app for mac
 | Windows 10 and newer, 64-bit | `Glyphbooth-<version>-win-x64.exe` |
 | Linux, 64-bit | `Glyphbooth-<version>-linux-x86_64.AppImage` |
 
-The macOS app is not notarized by Apple yet. Signed and notarized builds are coming in the next release. See [First launch on macOS](#first-launch-on-macos).
+The macOS app is not notarized by Apple yet, so the first launch needs one extra step. See [First launch on macOS](#first-launch-on-macos).
+
+**From source:** you need Node.js 22 or newer and a browser or GPU with WebGL2.
+
+```bash
+git clone https://github.com/mrsarac/glyphbooth.git
+cd glyphbooth
+npm ci
+npm run dev        # web app with hot reload
+npm run app        # build, then open in Electron
+```
 
 <p align="center"><img src="docs/media/demo.gif" alt="Glyphbooth cycling through five looks" width="800"></p>
 
@@ -47,14 +61,12 @@ The macOS app is not notarized by Apple yet. Signed and notarized builds are com
 
 **Share**
 - Save a PNG.
-- Record WebM video with sound.
+- Record video with sound (WebM; Safari records MP4).
 - Copy the picture as plain-text ASCII to the clipboard.
 - Save the picture as colored HTML.
 - Copy a link that holds your whole look in the URL.
 
 The interface is in English or Turkish, chosen from your browser language.
-
-## Modes
 
 <p align="center"><img src="docs/media/modes.png" alt="Six looks in a 3 by 2 grid: Terminal, Game Boy, Newsprint, Braille ghost, LED wall and Pen sketch" width="860"></p>
 
@@ -78,9 +90,40 @@ Every shortcut is a letter or a digit, so they work on any keyboard layout.
 | `F` | Full screen |
 | `H` | Hide or show the panel |
 
+## How it works
+
+Glyphbooth uses raw WebGL2 shaders and no graphics library. Each frame has three passes, plus an optional read-back for text export.
+
+```mermaid
+flowchart LR
+    A[Camera / screen / video /<br/>image / text / scene] --> B[Source pass<br/>texture + mipmaps]
+    B --> C[Effect pass<br/>ASCII, dither, halftone,<br/>braille, pixel]
+    C --> D[Post pass<br/>color split, scanlines,<br/>grain, beat flash]
+    D --> E[Screen / PNG / video]
+    B --> F[cells.frag<br/>one pixel per cell]
+    F --> G[Plain text / colored HTML]
+    H[Audio: demo track,<br/>mic or file] --> I[Beat detection] --> D
+```
+
+1. **Source pass** ([`source.frag`](src/render/shaders/source.frag)) draws the camera, video, image or scene into a texture, then builds mipmaps. The mipmaps give the average color of any cell in one texture read.
+2. **Effect pass** ([`effect.frag`](src/render/shaders/effect.frag)) turns the source into the chosen mode.
+3. **Post pass** ([`post.frag`](src/render/shaders/post.frag)) adds color split, scanlines, grain, vignette and the beat flash.
+
+Details behind the modes:
+
+- **Glyph atlas** ([`atlas.ts`](src/render/atlas.ts)). Every character of the set is drawn once with JetBrains Mono, then sorted by how much ink it covers. A 256-entry lookup table maps a cell's brightness to the glyph with the closest coverage.
+- **Edge glyphs.** A Sobel filter finds the edge direction in each cell. The shader then picks `|`, `/`, `-` or `\`.
+- **Dither.** An 8×8 Bayer matrix or interleaved gradient noise sets the threshold. The result snaps to the nearest palette color.
+- **Beat detection** ([`beat.ts`](src/audio/beat.ts)). Spectral flux of the audio, compared with its recent average, marks a beat.
+- **Demo track** ([`synth.ts`](src/audio/synth.ts)). Drums and bass are synthesized with the Web Audio API. There is no audio file and no copyright question.
+- **Text export** ([`capture.ts`](src/export/capture.ts)). [`cells.frag`](src/render/shaders/cells.frag) writes one pixel per cell. The CPU reads them back and rebuilds the same characters as plain text or colored HTML.
+- **State.** All settings are one plain object in [`state.ts`](src/state.ts). It is saved in local storage and written into the URL hash, so a look can be shared as a link.
+
+The design notes (in Turkish) are in [`docs/PLAN.tr.md`](docs/PLAN.tr.md).
+
 ## First launch on macOS
 
-The v0.1.0 `.dmg` is ad-hoc signed and not notarized by Apple. macOS blocks the first launch. Choose one of the two ways to open it. Signed and notarized builds are coming in the next release.
+The `.dmg` is ad-hoc signed and not notarized by Apple. macOS blocks the first launch. Choose one of the two ways to open it.
 
 **Way 1: System Settings**
 
@@ -126,26 +169,21 @@ Ubuntu 24.04 restricts the Chromium sandbox with AppArmor. If the app aborts wit
 ./Glyphbooth-*-linux-x86_64.AppImage --no-sandbox
 ```
 
-## Recording notes
-
-- Safari records MP4. Other browsers record WebM.
-- Microphone audio is included in recordings.
-
 ## Privacy
 
-Everything runs on your computer. Nothing is uploaded: not camera frames, not microphone sound, not your files. The app has no analytics and no account. Your settings stay in your browser's local storage. A shared link holds only look settings, never media.
+Everything runs on your computer. The app makes no network requests: camera frames, microphone sound and your files are never uploaded. There is no analytics and no account. Your settings stay in your browser's local storage. A shared link holds only look settings, never media.
 
-## Build from source
+## Development
 
-You need Node.js 22 or newer and a browser or GPU with WebGL2.
+Run the checks (CI runs the same steps):
 
 ```bash
-git clone https://github.com/mrsarac/glyphbooth.git
-cd glyphbooth
-npm ci
-npm run dev        # web app with hot reload
-npm run app        # build, then open in Electron
+npm run typecheck
+npm test            # unit tests (Vitest)
+npm run test:e2e    # smoke tests in Chromium with a fake camera (Playwright)
 ```
+
+The e2e tests need a browser once: `npx playwright install chromium`.
 
 Build installers (the file lands in `release/`; build each one on its own platform):
 
@@ -155,44 +193,23 @@ npm run dist:win
 npm run dist:linux
 ```
 
-Run the tests:
-
-```bash
-npm test            # unit tests (Vitest)
-npm run test:e2e    # smoke tests in Chromium with a fake camera (Playwright)
-```
-
-The e2e tests need a browser once: `npx playwright install chromium`.
-
 Regenerate the images in this README (needs `npm run build` first and ffmpeg):
 
 ```bash
 node scripts/capture-media.mjs
 ```
 
-## How it works
+## Status / limits
 
-Glyphbooth uses raw WebGL2 shaders and no graphics library. Each frame has three passes.
+Glyphbooth is an early release (v0.1). It works, but expect rough edges.
 
-1. **Source pass** ([`source.frag`](src/render/shaders/source.frag)) draws the camera, video, image or scene into a texture, then builds mipmaps. The mipmaps give the average color of any cell in one texture read.
-2. **Effect pass** ([`effect.frag`](src/render/shaders/effect.frag)) turns the source into the chosen mode.
-3. **Post pass** ([`post.frag`](src/render/shaders/post.frag)) adds color split, scanlines, grain, vignette and the beat flash.
+- **WebGL2 required.** Browsers or GPUs without WebGL2 are not supported.
+- **macOS builds are not notarized** by Apple yet; the first launch needs the steps above. Windows builds are not code-signed, so SmartScreen may warn.
+- **No system audio on macOS** screen capture.
+- **Recording format depends on the browser:** WebM in most browsers, MP4 in Safari.
+- **Automated tests cover Chromium only.** The e2e smoke tests run in Chromium; other browsers have no automated coverage.
 
-Details behind the modes:
-
-- **Glyph atlas** ([`atlas.ts`](src/render/atlas.ts)). Every character of the set is drawn once with JetBrains Mono, then sorted by how much ink it covers. A 256-entry lookup table maps a cell's brightness to the glyph with the closest coverage.
-- **Edge glyphs.** A Sobel filter finds the edge direction in each cell. The shader then picks `|`, `/`, `-` or `\`.
-- **Dither.** An 8×8 Bayer matrix or interleaved gradient noise sets the threshold. The result snaps to the nearest palette color.
-- **Beat detection** ([`beat.ts`](src/audio/beat.ts)). Spectral flux of the audio, compared with its recent average, marks a beat.
-- **Demo track** ([`synth.ts`](src/audio/synth.ts)). Drums and bass are synthesized with the Web Audio API. There is no audio file and no copyright question.
-- **Text export** ([`capture.ts`](src/export/capture.ts)). [`cells.frag`](src/render/shaders/cells.frag) writes one pixel per cell. The CPU reads them back and rebuilds the same characters as plain text or colored HTML.
-- **State.** All settings are one plain object in [`state.ts`](src/state.ts). It is saved in local storage and written into the URL hash, so a look can be shared as a link.
-
-The design notes (in Turkish) are in [`docs/PLAN.tr.md`](docs/PLAN.tr.md).
-
-## Roadmap
-
-Ideas for later versions. None of these ship in v0.1.
+Ideas for later versions. None of these ship yet:
 
 - macOS system audio capture (ScreenCaptureKit).
 - GIF export.
